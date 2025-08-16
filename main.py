@@ -1,62 +1,54 @@
+import sqlite3
 
-import json
+conn = sqlite3.connect('youtube.db')
+cursor = conn.cursor()
 
-def load_data():
-    try:
-        with open("youtube.txt",'r') as file:
-            videos = json.load(file)
-            return videos
-    except FileNotFoundError:
-        return []
-    
-def save_data(videos):
-    with open("youtube.txt",'w') as file:
-        json.dump(videos,file)
+cursor.execute('''
+               CREATE TABLE IF NOT EXISTS videos(
+                   id NUMBER PRIMARY KEY,
+                   title TEXT NOT NULL,
+                   time TEXT NOT NULL
+               )
+               ''')
+print("Connection established!!")
+conn.commit()
 
-def list_all_videos(videos):
-    print("*"*70)
-    for idx,video in enumerate(videos,start=1):
-        print(f"{idx}. {video['title']} : {video['time']}")
-    print("*"*70)
-    
 
+def list_all_videos():
+    cursor.execute("SELECT * FROM videos")
+    videos = cursor.fetchall()
+    conn.commit()
+    if videos:
+        print("\nList of favourite videos:")
+        for video in videos:
+            print(f"ID: {video[0]}, Title: {video[1]}, Time: {video[2]}")
+    else:
+        print("\nNo videos found.")
 
 def update_videos(videos):
-    list_all_videos(videos)
-    index = int(input("\nEnter index of the video you want to update : "))
-    if(1 <= index <= len(videos)):
-        title = input("Enter new title of the video : ")
-        time = input("Enter new time of the video : ")
-        videos[index-1]['title'] = title
-        videos[index-1]['time'] = time
-        print("\nVideo details updated successfully! <3")
-        save_data(videos)
-    else: 
-        print("\noppss... Wrong input! :/")
-        
+    vid_id = int(input("Enter video ID : "))
+    new_title = input("Enter new title : ")
+    new_time = input("Enter new time : ")
+    cursor.execute("UPDATE videos SET title = ? , time = ? WHERE id = ?",(new_title,new_time,vid_id))
+    conn.commit()
+    print("Updated successfully")
     
 
 def add_video(videos):
-    title = input("\nEnter the title of the video : ")
-    time = input("Enter time of the video : ")
-    videos.append({'title': title , 'time' : time})
-    save_data(videos)
-    print("\nVideo added successfully! <3\n")
+    vid_id = int(input("Enter video ID : "))
+    title = input("Enter title : ")
+    time = input("Enter time : ")
+    cursor.execute("INSERT into videos VALUES (?,?,?)",(vid_id,title,time))
+    conn.commit()
 
 def delete_video(videos):
-    list_all_videos(videos)
-    index = int(input("\nEnter the index of the video you want to delete : "))
-    if(1 <= index <= len(videos)):
-        del videos[index-1]
-        print("\nVideo deleted successfully! <3")
-    else:
-        print("oppss... Wrong input! :/")
+    vid_id = int(input("Enter video ID : "))
+    cursor.execute("DELETE FROM videos WHERE id = ?",(vid_id,))
     
      
 
 
 def main(): 
-    videos = load_data()
     while True:
         print("Welcome to Youtube Manager <3")
         print("enter 1 to list all your favourite videos ")
@@ -69,13 +61,13 @@ def main():
         
         match choice:
             case '1':
-                list_all_videos(videos)
+                list_all_videos()
             case '2':
-                update_videos(videos)
+                update_videos()
             case '3':
-                add_video(videos)
+                add_video()
             case '4':
-                delete_video(videos)
+                delete_video()
             case '5':
                 print("\nBieeee....<3")
                 break
@@ -85,4 +77,6 @@ def main():
     
 if(__name__ == "__main__"):
     main()
+    
+    conn.close()
     
